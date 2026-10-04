@@ -1,0 +1,55 @@
+# Настройки job-radar. Пути считаются относительно этого файла.
+
+database: jobradar.db       # SQLite-база с вакансиями и оценками
+profile: profile.md         # ваше резюме для AI-оценки (шаблон: profile.example.md)
+reports_dir: reports        # куда `report` складывает файлы
+
+# Вежливость к сайтам: один поток, пауза между запросами, мало страниц за прогон.
+http:
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+  delay_seconds: 2.0        # пауза между запросами (+ случайные 0–50%)
+  timeout_seconds: 20
+  max_pages: 3              # сколько страниц списка читать на один запрос
+  max_details_per_run: 60   # сколько страниц вакансий (полный текст) открывать на источник за прогон
+  fetch_details: true       # false — хранить только краткое описание из списка
+
+# Фильтры по ключевым словам (без учёта регистра).
+# include — оставить, если заголовок или краткое описание содержит любое слово (пусто = всё).
+# exclude — выбросить, если заголовок содержит любое слово.
+keywords:
+  include: []
+  exclude: [senior, lead, "team lead", head, architect, principal, сеньйор]
+
+sources:
+  workua:
+    enabled: true
+    queries:
+      # deferment=1 — только вакансии с бронированием от мобилизации.
+      - name: python-бронь
+        url: https://www.work.ua/jobs-python/?deferment=1
+      - name: it-бронь
+        url: https://www.work.ua/jobs-it/?deferment=1
+        # раздел IT большой — оставляем только близкое к Python/бекенду
+        include: [python, django, fastapi, flask, backend, бекенд, бэкенд, junior, trainee, intern, стажист, стажер]
+
+  dou:
+    enabled: true
+    queries:
+      - name: python-0-1
+        url: https://jobs.dou.ua/vacancies/?category=Python&exp=0-1
+
+  robotaua:
+    # Заглушка: парсер не реализован, см. README.
+    enabled: false
+    queries: []
+
+# AI-оценка через Claude. Ключ берётся только из переменной окружения ANTHROPIC_API_KEY.
+ai:
+  model: claude-haiku-4-5
+  max_tokens: 1024          # на ответ; при обрезанном JSON следующая попытка удваивает лимит
+  batch_size: 10            # сколько вакансий в одном пакете (результаты пишутся в базу после каждого)
+  concurrency: 4            # параллельных запросов внутри пакета
+  max_attempts: 3           # попыток на вакансию (сверх встроенных ретраев SDK на 429/5xx)
+  max_per_run: 100          # не больше стольких оценок за один `rank` (защита бюджета)
+  max_vacancy_chars: 12000  # длинные тексты обрезаются до этого размера
+  # effort: low             # только для моделей с параметром effort (не для Haiku 4.5)

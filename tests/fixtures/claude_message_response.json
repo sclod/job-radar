@@ -1,0 +1,20 @@
+{
+  "id": "msg_01FixtureResponse",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-haiku-4-5",
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"score\": 82, \"verdict\": \"відгукуватись\", \"matches\": [\"Python 3\", \"Django\", \"pytest\", \"PostgreSQL\"], \"gaps\": [\"комерційний досвід з Docker\"], \"deferment\": \"є\", \"note\": \"Стек майже повністю збігається з резюме, а бронювання прямо вказане у вакансії.\"}"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 1450,
+    "output_tokens": 96,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0
+  }
+}

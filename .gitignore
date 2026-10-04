@@ -1,0 +1,16 @@
+# окружение
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# секреты и личные данные
+.env
+profile.md
+
+# данные и результаты запусков
+*.db
+*.db-journal
+reports/
+debug-html/
