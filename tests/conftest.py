@@ -25,6 +25,12 @@ def no_network(monkeypatch):
 
     monkeypatch.setattr(socket.socket, "connect", guard)
     monkeypatch.setattr(socket, "create_connection", guard)
+    # curl_cffi открывает соединения внутри libcurl, мимо модуля socket
+    try:
+        from curl_cffi import requests as curl_requests
+    except ImportError:
+        return
+    monkeypatch.setattr(curl_requests.Session, "request", guard)
 
 
 @pytest.fixture

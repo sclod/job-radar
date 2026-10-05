@@ -6,6 +6,9 @@ reports_dir: reports        # куда `report` складывает файлы
 
 # Вежливость к сайтам: один поток, пауза между запросами, мало страниц за прогон.
 http:
+  backend: curl_cffi        # curl_cffi (TLS-отпечаток как у браузера; без него work.ua отвечает 403) или httpx (запасной)
+  impersonate: chrome       # какой браузер имитирует curl_cffi: chrome, chrome146, firefox, safari, edge…
+  # user_agent используется только с backend: httpx — curl_cffi шлёт UA того браузера, который имитирует
   user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
   delay_seconds: 2.0        # пауза между запросами (+ случайные 0–50%)
   timeout_seconds: 20

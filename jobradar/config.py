@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -20,7 +21,10 @@ class _Strict(BaseModel):
 
 
 class HttpSettings(_Strict):
-    user_agent: str = DEFAULT_USER_AGENT
+    # curl_cffi повторяет TLS-отпечаток браузера (без него work.ua отвечает 403); httpx — запасной
+    backend: Literal["curl_cffi", "httpx"] = "curl_cffi"
+    impersonate: str = "chrome"  # какой браузер имитирует curl_cffi
+    user_agent: str = DEFAULT_USER_AGENT  # только для httpx: curl_cffi шлёт UA имитируемого браузера
     delay_seconds: float = Field(2.0, ge=0)
     timeout_seconds: float = Field(20.0, gt=0)
     max_pages: int = Field(3, ge=1)
