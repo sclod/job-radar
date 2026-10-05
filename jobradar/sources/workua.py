@@ -24,6 +24,23 @@ _JOB_HREF = re.compile(r"/(?:ru/|en/)?jobs/\d+/?")
 _PUBLISHED = re.compile(r"(?:вакансія|вакансия|vacancy)\s+(?:від|от|from)\s+(.+)$", re.IGNORECASE)
 _STRONG = "span.strong-600, span.strong-500, b, strong"
 _CITY_NOISE = re.compile(r"\d+([.,]\d+)?\s*км.*$|показати на карті|показать на карте", re.IGNORECASE)
+_SEPARATORS = re.compile(r"\s*[·•|]\s*")
+# зарплата без суммы
+_SALARY_PHRASE = re.compile(
+    r"за результатами співбесіди|за домовленістю|договірна"
+    r"|по результатам собеседования|по договоренности|договорная",
+    re.IGNORECASE,
+)
+# сумма начинается с цифры, валюты или «від/до»: «75 000 грн», «від 18 000 грн», «$4000 – 5000»
+_SALARY_START = re.compile(r"^(?:від|до|от|from|up to)?\s*[$€]?\s*\d", re.IGNORECASE)
+# уточнения к зарплате, которые на карточке стоят рядом с суммой (сравнивается весь текст
+# элемента, чтобы не отбросить компанию вроде «KPI Solutions»)
+_SALARY_NOTE = re.compile(
+    r"після\s+(?:всіх\s+)?(?:відрахувань|вирахувань|сплати\s+податків)"
+    r"|до\s+(?:відрахування|вирахування|сплати)\s+податків|на\s+руки|(?:є\s+)?система\s+kpi"
+    r"|после\s+(?:всех\s+)?вычетов|до\s+вычета\s+налогов|(?:есть\s+)?система\s+kpi",
+    re.IGNORECASE,
+)
 
 
 @register
@@ -56,20 +73,25 @@ class WorkUaSource(Source):
         title = node_text(link)
         url = canonical_url(absolute_url(link.attributes.get("href") or "", page_url))
 
-        salary = company = city = None
+        # Поля определяются по смыслу, а не по порядку: строка зарплаты (сумма + уточнения
+        # вроде «Після всіх відрахувань») целиком уходит в salary, компания — первый жирный
+        # элемент вне этой строки, город — остаток строки компании.
+        salary_row, salary = _salary_row(card)
+        company = city = None
         for el in card.css(_STRONG):
-            if _has_ancestor(el, card, lambda n: n.tag in {"h2", "p"} or "label" in _cls(n)):
+            if _has_ancestor(el, card, _not_info):
+                continue
+            if salary_row is not None and _inside(el, salary_row):
                 continue
             text = node_text(el)
             if not text or text == title:
                 continue
-            if salary is None and looks_like_salary(text):
-                salary = text
-            elif company is None and not looks_like_salary(text):
-                company = text
-                city = _city_from_row(_row_of(el, card), text)
-            if salary and company:
-                break
+            if _is_salary(text) or _is_salary_note(text):
+                salary = salary or (text if _is_salary(text) else None)
+                continue
+            company = text
+            city = _city_from_row(_row_of(el, card), text)
+            break
 
         published = None
         if m := _PUBLISHED.search(clean(link.attributes.get("title"))):
@@ -183,11 +205,49 @@ def _row_of(node: LexborNode, card: LexborNode) -> LexborNode:
     return node
 
 
+def _not_info(node: LexborNode) -> bool:
+    """Заголовок, краткое описание и метки («Гаряча») — не строки с данными вакансии."""
+    return node.tag in {"h2", "p"} or "label" in _cls(node)
+
+
+def _inside(node: LexborNode, ancestor: LexborNode) -> bool:
+    while node is not None:
+        if node.mem_id == ancestor.mem_id:
+            return True
+        node = node.parent
+    return False
+
+
+def _is_salary(text: str) -> bool:
+    """Сумма («75 000 грн», «від 18 000 грн», «$4000 – 5000») или «За результатами співбесіди»."""
+    text = clean(text)
+    return bool(_SALARY_PHRASE.search(text) or (looks_like_salary(text) and _SALARY_START.match(text)))
+
+
+def _is_salary_note(text: str) -> bool:
+    """«Після всіх відрахувань», «є система KPI» и т.п. — уточнение к зарплате целиком."""
+    return bool(_SALARY_NOTE.fullmatch(clean(text).strip(" .,;")))
+
+
+def _salary_row(card: LexborNode) -> tuple[LexborNode | None, str | None]:
+    """Строка карточки, которая начинается с зарплаты, и её текст вместе с уточнениями:
+    «100 000 – 120 000 грн · Після всіх відрахувань · є система KPI»."""
+    for row in card.css("div"):
+        # нужны только «листовые» строки, не обёртки (css() включает и сам узел)
+        if any(inner.mem_id != row.mem_id for inner in row.css("div")) or _has_ancestor(row, card, _not_info):
+            continue
+        parts = [part for part in _SEPARATORS.split(node_text(row)) if part]
+        if parts and _is_salary(parts[0]):
+            return row, " · ".join(parts)
+    return None, None
+
+
 def _city_from_row(row: LexborNode, company: str) -> str | None:
-    rest = node_text(row).replace(company, "", 1)
-    rest = _CITY_NOISE.sub("", rest)
-    rest = rest.strip(" ·•|,.-–—")
-    return rest or None
+    rest = _CITY_NOISE.sub("", node_text(row).replace(company, "", 1))
+    parts = [part.strip(" ,.-–—") for part in _SEPARATORS.split(rest)]
+    # зарплата и уточнения к ней в город не попадают, даже если стоят в той же строке
+    parts = [part for part in parts if part and not _is_salary(part) and not _is_salary_note(part)]
+    return " · ".join(parts) or None
 
 
 def _first_strong(node: LexborNode) -> str | None:

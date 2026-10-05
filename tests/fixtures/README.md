@@ -22,6 +22,8 @@ python -m jobradar fetch --save-html debug-html/
 | `workua_list.html` | список work.ua (`/jobs-python/?deferment=1`), 4 вакансии + рекламный блок + пагинация |
 | `workua_list_page2.html` | вторая страница списка, содержит дубль вакансии с первой |
 | `workua_list_legacy.html` | старая вёрстка work.ua — проверка запасных селекторов |
+| `workua_cards_with_salary.html` | карточки с зарплатой и уточнениями («Після всіх відрахувань», «є система KPI», «За результатами співбесіди»); структура восстановлена по баг-репорту для jobs/8524609 и jobs/8555601, данные кроме id, сумм и Vyriy Industries / Київ — заглушки |
+| `workua_cards_without_salary.html` | карточки без зарплаты (jobs/8381297, jobs/6502018); данные кроме id — заглушки |
 | `workua_vacancy.html` | страница вакансии work.ua с упоминанием бронирования |
 | `workua_vacancy_no_text.html` | страница без блока описания |
 | `dou_list.html` | список DOU (`?category=Python&exp=0-1`) с CSRF-токеном |

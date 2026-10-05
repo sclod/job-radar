@@ -79,6 +79,64 @@ def test_workua_legacy_markup(workua):
     assert vacancies[1].published_at == date(2026, 1, 30)
 
 
+def test_workua_cards_with_salary(workua):
+    """Баг: уточнение к зарплате принималось за компанию, а строка зарплаты — за город."""
+    cards = {v.url: v for v in workua.parse_list(fixture_text("workua_cards_with_salary.html"), WORKUA_LIST)}
+
+    net = cards["https://www.work.ua/jobs/8524609/"]
+    assert (net.company, net.city) == ("Vyriy Industries", "Київ")
+    assert net.salary == "75 000 грн · Після всіх відрахувань"
+
+    kpi = cards["https://www.work.ua/jobs/8555601/"]
+    assert (kpi.company, kpi.city) == ("Placeholder Company", "Львів")
+    assert kpi.salary == "100 000 – 120 000 грн · Після всіх відрахувань · є система KPI"
+
+    by_interview = cards["https://www.work.ua/jobs/5900010/"]
+    assert (by_interview.company, by_interview.city) == ("Omega Soft", "Дистанційно")
+    assert by_interview.salary == "За результатами співбесіди"
+
+    for vacancy in cards.values():
+        for field in (vacancy.company, vacancy.city):
+            assert "грн" not in field
+            assert "відрахувань" not in field
+            assert "KPI" not in field
+            assert "співбесіди" not in field
+
+
+def test_workua_cards_without_salary(workua):
+    cards = workua.parse_list(fixture_text("workua_cards_without_salary.html"), WORKUA_LIST)
+
+    assert [(v.url, v.company, v.city, v.salary) for v in cards] == [
+        ("https://www.work.ua/jobs/8381297/", "Placeholder Systems", "Одеса", None),
+        ("https://www.work.ua/jobs/6502018/", "ТОВ «Заглушка»", "Київ", None),  # «· 3 км від вас» отброшено
+    ]
+
+
+@pytest.mark.parametrize(
+    ("salary_html", "expected_salary"),
+    [
+        # сумма обычным текстом, уточнение жирным
+        ('<div><span>75 000 грн</span> · <b>Після всіх відрахувань</b></div>', "75 000 грн · Після всіх відрахувань"),
+        # уточнение отдельной строкой под суммой
+        (
+            '<div><span class="strong-600">75 000 грн</span></div><div><span class="strong-500">Після всіх відрахувань</span></div>',
+            "75 000 грн",
+        ),
+        # сумма вне div-строки
+        ('<span class="strong-600">від 40 000 грн</span>', "від 40 000 грн"),
+    ],
+)
+def test_workua_salary_markup_variants(workua, salary_html, expected_salary):
+    html = f"""
+    <div class="card job-link">
+      <h2><a href="/jobs/8524609/" title="Python Developer, вакансія від 2 жовтня 2026">Python Developer</a></h2>
+      {salary_html}
+      <div><span class="mr-xs"><span class="strong-600">Vyriy Industries</span></span> <span>Київ</span></div>
+    </div>"""
+    (vacancy,) = workua.parse_list(html, WORKUA_LIST)
+    assert (vacancy.company, vacancy.city, vacancy.salary) == ("Vyriy Industries", "Київ", expected_salary)
+
+
 def test_workua_pagination(workua):
     page1 = fixture_text("workua_list.html")
     assert workua.next_page_url(page1, WORKUA_LIST, 1) == "https://www.work.ua/jobs-python/?deferment=1&page=2"

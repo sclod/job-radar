@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head><meta charset="utf-8"><title>Робота Python з бронюванням | Work.ua</title></head>
+<body>
+<!--
+  Карточки с зарплатой. Реконструкция по баг-репорту (живая страница из песочницы недоступна):
+  блок зарплаты содержит, кроме суммы, жирные уточнения («Після всіх відрахувань», «є система KPI»),
+  из-за которых старый парсер принимал уточнение за компанию, а строку зарплаты — за город.
+  Реальные из отчёта: id, суммы, уточнения, Vyriy Industries / Київ. Остальное — заглушки.
+-->
+<div id="pjax-jobs-list">
+
+  <div class=" card card-hover card-search card-visited wordwrap job-link js-job-link-blank mt-lg" >
+    <h2 class="my-0">
+      <a href="/jobs/8524609/" title="Python Developer, вакансія від 2 жовтня 2026" tabindex="-1">Python Developer</a>
+    </h2>
+    <div class="mt-xs">
+      <span class="strong-600">75&nbsp;000 грн</span><span class="text-default-7"> · </span><span class="strong-500">Після всіх відрахувань</span>
+    </div>
+    <div class="mt-xs">
+      <span class="mr-xs"><span class="strong-600">Vyriy Industries</span></span>
+      <span class="">Київ</span>
+    </div>
+    <p class="ellipsis ellipsis-line ellipsis-line-3 text-default-7 mb-0">Розробка бекенду на Python. Зарплата 75 000 грн на руки.</p>
+  </div>
+
+  <div class=" card card-hover card-search card-visited wordwrap job-link js-job-link-blank mt-lg" >
+    <h2 class="my-0">
+      <a href="/jobs/8555601/" title="Senior Backend Engineer, вакансія від 1 жовтня 2026" tabindex="-1">Senior Backend Engineer</a>
+    </h2>
+    <div class="mt-xs">
+      <span class="strong-600">100&nbsp;000 – 120&nbsp;000 грн</span><span class="text-default-7"> · </span><b>Після всіх відрахувань</b><span class="text-default-7"> · </span><span>є система KPI</span>
+    </div>
+    <div class="mt-xs">
+      <span class="mr-xs"><span class="strong-600">Placeholder Company</span></span>
+      <span class="">Львів</span>
+    </div>
+    <p class="ellipsis ellipsis-line ellipsis-line-3 text-default-7 mb-0">Python, PostgreSQL, Kafka.</p>
+  </div>
+
+  <div class=" card card-hover card-search card-visited wordwrap job-link js-job-link-blank mt-lg" >
+    <h2 class="my-0">
+      <a href="/jobs/5900010/" title="Junior Python Developer, вакансія від 30 вересня 2026" tabindex="-1">Junior Python Developer</a>
+    </h2>
+    <div class="mt-xs">
+      <span class="strong-600">За результатами співбесіди</span>
+    </div>
+    <div class="mt-xs">
+      <span class="mr-xs"><span class="strong-600">Omega Soft</span></span>
+      <span class="">Дистанційно</span>
+    </div>
+    <p class="ellipsis ellipsis-line ellipsis-line-3 text-default-7 mb-0">Шукаємо початківця в команду.</p>
+  </div>
+
+</div>
+</body>
+</html>
